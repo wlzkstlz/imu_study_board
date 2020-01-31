@@ -58,35 +58,6 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-// uint16_t HH_SPI_Send_Receive(uint16_t send_data)
-// {
-//   uint16_t result = 0;
-//   HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_SET);
-//   HAL_Delay(1);
-//   HAL_GPIO_WritePin(GPIOB, SPI_CLK_Pin, GPIO_PIN_SET);
-//   HAL_Delay(1);
-//   HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_RESET);
-//   HAL_Delay(1);
-
-//   for (uint8_t i = 0; i < 16; i++)
-//   {
-//     HAL_GPIO_WritePin(GPIOB, SPI_CLK_Pin, GPIO_PIN_RESET);
-//     if ((send_data & (0x01 << (15 - i))) == 0)
-//       HAL_GPIO_WritePin(GPIOB, SPI_MOSI_Pin, GPIO_PIN_RESET);
-//     else
-//       HAL_GPIO_WritePin(GPIOB, SPI_MOSI_Pin, GPIO_PIN_SET);
-//     HAL_Delay(1);
-//     HAL_GPIO_WritePin(GPIOB, SPI_CLK_Pin, GPIO_PIN_SET);
-//     if (HAL_GPIO_ReadPin(GPIOB, SPI_MISO_Pin) == GPIO_PIN_SET)
-//       result |= (0x01 << (15 - i));
-//     HAL_Delay(1);
-//   }
-
-//   HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_SET);
-//   HAL_Delay(1);
-
-//   return result;
-// }
 
 void send_my_heart_to_u(float x, float y)
 {
@@ -125,32 +96,30 @@ void send_temperature(float tp)
   HAL_UART_Transmit(&huart3, data, data_length, 0xFFFF);
 }
 
-// #define     ICM20602_SPI_W              0x00
-// #define     ICM20602_SPI_R              0x80
-// #define     ICM20602_WHO_AM_I           0x75
+void send_imu_data(int16_t gyro_x, int16_t gyro_y, int16_t gyro_z,
+                   int16_t acc_x, int16_t acc_y, int16_t acc_z)
+{
+  const size_t data_length = 1 + 6 * sizeof(int16_t) + 2;
+  uint8_t data[data_length];
+  data[0] = 0xa5;
+  data[data_length - 2] = 0;
+  data[data_length - 1] = 0x5a;
 
-// void icm_spi_r_reg_byte(uint8_t cmd, uint8_t *val)
-// {
-//   uint8_t dat[2];
+  memcpy(data + 1 + 0 * sizeof(int16_t), (uint8_t *)(&gyro_x), sizeof(int16_t));
+  memcpy(data + 1 + 1 * sizeof(int16_t), (uint8_t *)(&gyro_y), sizeof(int16_t));
+  memcpy(data + 1 + 2 * sizeof(int16_t), (uint8_t *)(&gyro_z), sizeof(int16_t));
+  memcpy(data + 1 + 3 * sizeof(int16_t), (uint8_t *)(&acc_x), sizeof(int16_t));
+  memcpy(data + 1 + 4 * sizeof(int16_t), (uint8_t *)(&acc_y), sizeof(int16_t));
+  memcpy(data + 1 + 5 * sizeof(int16_t), (uint8_t *)(&acc_z), sizeof(int16_t));
 
-//   HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_RESET);
-//   dat[0] = cmd | ICM20602_SPI_R;
-//   dat[1] = *val;
-//   HAL_SPI_TransmitReceive(&hspi1, dat, dat, 2, 500);
+  for (size_t i = 1; i < data_length - 2; i++)
+  {
+    data[data_length - 2] += data[i];
+  }
 
-//   HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_SET);
+  HAL_UART_Transmit(&huart3, data, data_length, 0xFFFF);
+}
 
-//   *val = dat[1];
-// }
-// void icm20602_self3_check(void)
-// {
-//     uint8_t dat=0;
-//     while(0x12 != dat)   //��ȡICM20602 ID
-//     {
-//         icm_spi_r_reg_byte(ICM20602_WHO_AM_I,&dat);
-//         HAL_Delay(10);
-//     }
-// }
 /* USER CODE END 0 */
 
 /**
@@ -162,7 +131,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
-  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -186,9 +154,8 @@ int main(void)
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 
-  icm20602_self3_check();
-
-  
+  //在这里初始化imu模块
+  icm20602_init_spi();
 
   /* USER CODE END 2 */
 
@@ -205,68 +172,21 @@ int main(void)
     /* USER CODE BEGIN 3 */
     HAL_Delay(30);
 
-    i++;
+    /****************send_my_heart_to_u。。。start*****************************/
     t += 0.01;
     x = 16 * sin(t) * sin(t) * sin(t);
     y = 13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t);
-
     //send_my_heart_to_u(x, y);
+    /****************send_my_heart_to_u。。。end*****************************/
 
-    uint16_t temperature = 0;
+    /****************imu codes start*****************************/
+    get_icm20602_accdata_spi();
+    get_icm20602_gyro_spi();
+    send_imu_data(icm_gyro_x, icm_gyro_y, icm_gyro_z, icm_acc_x, icm_acc_y, icm_acc_z);
+    /****************imu codes end*****************************/
 
-    // uint16_t spi_cmd = 0;
-    // spi_cmd |= (0x01 << 15);
-    // spi_cmd |= (0x3c << 8);
-    // uint16_t spi_data = HH_SPI_Send_Receive(spi_cmd);
-    // temperature |= (spi_data & 0x00ff);
-
-    // spi_cmd = 0;
-    // spi_cmd |= (0x01 << 15);
-    // spi_cmd |= (0x3b << 8);
-    // spi_data = HH_SPI_Send_Receive(spi_cmd);
-    // temperature |= ((spi_data & 0x00ff) << 8);
-
-    //
-
-    // uint8_t spi_cmd[2] = {0};
-    // uint8_t spi_received[2] = {0};
-
-    // spi_cmd[0] |= (0x01 << 7);
-    // spi_cmd[0] |= 0x42;
-
-    // HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
-    // HAL_Delay(1);
-    // HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
-    // HAL_Delay(1);
-    // HAL_SPI_TransmitReceive(&hspi1, spi_cmd, spi_received, 2, 0xffff);
-    // HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
-
-    // temperature |= spi_received[1];
-
-    // spi_cmd[0] = 0;
-    // spi_cmd[1] = 0;
-    // spi_received[0] = 0;
-    // spi_received[1] = 0;
-
-    // spi_cmd[0] |= (0x01 << 7);
-    // spi_cmd[0] |= 0x41;
-
-    // HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
-    // HAL_Delay(1);
-    // HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
-    // HAL_Delay(1);
-    // HAL_SPI_TransmitReceive(&hspi1, spi_cmd, spi_received, 2, 0xffff);
-    // HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
-
-    // temperature |= (spi_received[1] << 8);
-
-    float tp = (temperature / 326.8) + 25.0;
-
-    send_temperature(tp);
-
-    //uint8_t data[]="hello\n";
-    //HAL_UART_Transmit(&huart3, data, sizeof(data), 0xFFFF);
-
+    //闪灯程序
+    i++;
     if (i % 40 == 0)
     {
       HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
@@ -305,8 +225,7 @@ void SystemClock_Config(void)
   }
   /** Initializes the CPU, AHB and APB busses clocks 
   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -334,7 +253,7 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
@@ -343,7 +262,7 @@ void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
