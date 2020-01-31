@@ -1,0 +1,27 @@
+--cpu Cortex-M3
+"imu_study_board\startup_stm32f103xe.o"
+"imu_study_board\main.o"
+"imu_study_board\gpio.o"
+"imu_study_board\sys.o"
+"imu_study_board\usart.o"
+"imu_study_board\stm32f1xx_it.o"
+"imu_study_board\stm32f1xx_hal_msp.o"
+"imu_study_board\stm32f1xx_hal_gpio_ex.o"
+"imu_study_board\stm32f1xx_hal_tim.o"
+"imu_study_board\stm32f1xx_hal_tim_ex.o"
+"imu_study_board\stm32f1xx_hal_uart.o"
+"imu_study_board\stm32f1xx_hal.o"
+"imu_study_board\stm32f1xx_hal_rcc.o"
+"imu_study_board\stm32f1xx_hal_rcc_ex.o"
+"imu_study_board\stm32f1xx_hal_gpio.o"
+"imu_study_board\stm32f1xx_hal_dma.o"
+"imu_study_board\stm32f1xx_hal_cortex.o"
+"imu_study_board\stm32f1xx_hal_pwr.o"
+"imu_study_board\stm32f1xx_hal_flash.o"
+"imu_study_board\stm32f1xx_hal_flash_ex.o"
+"imu_study_board\stm32f1xx_hal_exti.o"
+"imu_study_board\system_stm32f1xx.o"
+--library_type=microlib --strict --scatter "imu_study_board\imu_study_board.sct"
+--summary_stderr --info summarysizes --map --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "imu_study_board.map" -o imu_study_board\imu_study_board.axf
