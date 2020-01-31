@@ -57,35 +57,35 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint16_t HH_SPI_Send_Receive(uint16_t send_data)
-{
-  uint16_t result = 0;
-  HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_SET);
-  HAL_Delay(1);
-  HAL_GPIO_WritePin(GPIOB, SPI_CLK_Pin, GPIO_PIN_SET);
-  HAL_Delay(1);
-  HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_RESET);
-  HAL_Delay(1);
+// uint16_t HH_SPI_Send_Receive(uint16_t send_data)
+// {
+//   uint16_t result = 0;
+//   HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_SET);
+//   HAL_Delay(1);
+//   HAL_GPIO_WritePin(GPIOB, SPI_CLK_Pin, GPIO_PIN_SET);
+//   HAL_Delay(1);
+//   HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_RESET);
+//   HAL_Delay(1);
 
-  for (uint8_t i = 0; i < 16; i++)
-  {
-    HAL_GPIO_WritePin(GPIOB, SPI_CLK_Pin, GPIO_PIN_RESET);
-    if ((send_data & (0x01 << (15 - i))) == 0)
-      HAL_GPIO_WritePin(GPIOB, SPI_MOSI_Pin, GPIO_PIN_RESET);
-    else
-      HAL_GPIO_WritePin(GPIOB, SPI_MOSI_Pin, GPIO_PIN_SET);
-    HAL_Delay(1);
-    HAL_GPIO_WritePin(GPIOB, SPI_CLK_Pin, GPIO_PIN_SET);
-    if (HAL_GPIO_ReadPin(GPIOB, SPI_MISO_Pin) == GPIO_PIN_SET)
-      result |= (0x01 << (15 - i));
-    HAL_Delay(1);
-  }
+//   for (uint8_t i = 0; i < 16; i++)
+//   {
+//     HAL_GPIO_WritePin(GPIOB, SPI_CLK_Pin, GPIO_PIN_RESET);
+//     if ((send_data & (0x01 << (15 - i))) == 0)
+//       HAL_GPIO_WritePin(GPIOB, SPI_MOSI_Pin, GPIO_PIN_RESET);
+//     else
+//       HAL_GPIO_WritePin(GPIOB, SPI_MOSI_Pin, GPIO_PIN_SET);
+//     HAL_Delay(1);
+//     HAL_GPIO_WritePin(GPIOB, SPI_CLK_Pin, GPIO_PIN_SET);
+//     if (HAL_GPIO_ReadPin(GPIOB, SPI_MISO_Pin) == GPIO_PIN_SET)
+//       result |= (0x01 << (15 - i));
+//     HAL_Delay(1);
+//   }
 
-  HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_SET);
-  HAL_Delay(1);
+//   HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_SET);
+//   HAL_Delay(1);
 
-  return result;
-}
+//   return result;
+// }
 
 void send_my_heart_to_u(float x, float y)
 {
@@ -123,6 +123,33 @@ void send_temperature(float tp)
 
   HAL_UART_Transmit(&huart3, data, data_length, 0xFFFF);
 }
+
+#define     ICM20602_SPI_W              0x00
+#define     ICM20602_SPI_R              0x80
+#define     ICM20602_WHO_AM_I           0x75
+
+void icm_spi_r_reg_byte(uint8_t cmd, uint8_t *val)
+{
+  uint8_t dat[2];
+
+  HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_RESET);
+  dat[0] = cmd | ICM20602_SPI_R;
+  dat[1] = *val;
+  HAL_SPI_TransmitReceive(&hspi1, dat, dat, 2, 500);
+
+  HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_SET);
+
+  *val = dat[1];
+}
+void icm20602_self3_check(void)
+{
+    uint8_t dat=0;
+    while(0x12 != dat)   //��ȡICM20602 ID
+    {
+        icm_spi_r_reg_byte(ICM20602_WHO_AM_I,&dat);
+        HAL_Delay(10);
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -158,6 +185,10 @@ int main(void)
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 
+  icm20602_self3_check();
+
+  
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -182,17 +213,19 @@ int main(void)
 
     uint16_t temperature = 0;
 
-    uint16_t spi_cmd = 0;
-    spi_cmd |= (0x01 << 15);
-    spi_cmd |= (0x3c << 8);
-    uint16_t spi_data = HH_SPI_Send_Receive(spi_cmd);
-    temperature |= (spi_data & 0x00ff);
+    // uint16_t spi_cmd = 0;
+    // spi_cmd |= (0x01 << 15);
+    // spi_cmd |= (0x3c << 8);
+    // uint16_t spi_data = HH_SPI_Send_Receive(spi_cmd);
+    // temperature |= (spi_data & 0x00ff);
 
-    spi_cmd = 0;
-    spi_cmd |= (0x01 << 15);
-    spi_cmd |= (0x3b << 8);
-    spi_data = HH_SPI_Send_Receive(spi_cmd);
-    temperature |= ((spi_data & 0x00ff) << 8);
+    // spi_cmd = 0;
+    // spi_cmd |= (0x01 << 15);
+    // spi_cmd |= (0x3b << 8);
+    // spi_data = HH_SPI_Send_Receive(spi_cmd);
+    // temperature |= ((spi_data & 0x00ff) << 8);
+
+    //
 
     // uint8_t spi_cmd[2] = {0};
     // uint8_t spi_received[2] = {0};
