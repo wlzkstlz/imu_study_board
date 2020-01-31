@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <math.h>
+#include "SEEKFREE_ICM20602.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -124,32 +125,32 @@ void send_temperature(float tp)
   HAL_UART_Transmit(&huart3, data, data_length, 0xFFFF);
 }
 
-#define     ICM20602_SPI_W              0x00
-#define     ICM20602_SPI_R              0x80
-#define     ICM20602_WHO_AM_I           0x75
+// #define     ICM20602_SPI_W              0x00
+// #define     ICM20602_SPI_R              0x80
+// #define     ICM20602_WHO_AM_I           0x75
 
-void icm_spi_r_reg_byte(uint8_t cmd, uint8_t *val)
-{
-  uint8_t dat[2];
+// void icm_spi_r_reg_byte(uint8_t cmd, uint8_t *val)
+// {
+//   uint8_t dat[2];
 
-  HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_RESET);
-  dat[0] = cmd | ICM20602_SPI_R;
-  dat[1] = *val;
-  HAL_SPI_TransmitReceive(&hspi1, dat, dat, 2, 500);
+//   HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_RESET);
+//   dat[0] = cmd | ICM20602_SPI_R;
+//   dat[1] = *val;
+//   HAL_SPI_TransmitReceive(&hspi1, dat, dat, 2, 500);
 
-  HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_SET);
+//   HAL_GPIO_WritePin(GPIOB, SPI_CS_Pin, GPIO_PIN_SET);
 
-  *val = dat[1];
-}
-void icm20602_self3_check(void)
-{
-    uint8_t dat=0;
-    while(0x12 != dat)   //��ȡICM20602 ID
-    {
-        icm_spi_r_reg_byte(ICM20602_WHO_AM_I,&dat);
-        HAL_Delay(10);
-    }
-}
+//   *val = dat[1];
+// }
+// void icm20602_self3_check(void)
+// {
+//     uint8_t dat=0;
+//     while(0x12 != dat)   //��ȡICM20602 ID
+//     {
+//         icm_spi_r_reg_byte(ICM20602_WHO_AM_I,&dat);
+//         HAL_Delay(10);
+//     }
+// }
 /* USER CODE END 0 */
 
 /**

@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "stm32f1xx_hal.h": "c",
+        "main.h": "c",
+        "spi.h": "c",
+        "seekfree_icm20602.h": "c"
+    }
+}
